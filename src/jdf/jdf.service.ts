@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -16,19 +16,20 @@ import type {
 } from '@prisma/client';
 import { ValueParser } from 'src/value-parser';
 
-const USE_DEBUG_DIR = false;
-const DEBUG_DONT_CLEANUP = false;
+const USE_DEBUG_DIR = true;
+const DEBUG_DONT_CLEANUP = true;
 
 @Injectable()
 export class JdfService {
-  private readonly tempDir;
+  private readonly tempDir: string;
+  private readonly logger = new Logger(JdfService.name);
 
   constructor(private readonly prisma: PrismaService) {
     this.tempDir = path.join(os.tmpdir(), 'jdf');
   }
 
   async processJdfZip(file: Express.Multer.File) {
-    console.log('Processing JDF zip file:', file.originalname);
+    this.logger.log('Processing JDF zip file:', file.originalname);
 
     const filesDir = await this.saveAndExtractZip(file);
 
@@ -137,7 +138,7 @@ export class JdfService {
       internalId: number;
     }[] = [];
 
-    console.log({ row: parsedFile[0], linesData, stopData });
+    this.logger.log({ row: parsedFile[0], linesData, stopData });
 
     for await (const row of parsedFile) {
       const lineId =
@@ -265,7 +266,7 @@ export class JdfService {
       internalId: number;
     }[] = [];
 
-    console.log({ stop: parsedFile[0] });
+    this.logger.log({ stop: parsedFile[0] });
     for await (const row of parsedFile) {
       const stop: Omit<Stop, 'id' | 'lat' | 'lon' | 'duplicateRootId'> = {
         number: ValueParser.parseInt(row[0]),
@@ -372,15 +373,15 @@ export class JdfService {
 
   private async cleanupTempDir(tempDir: string) {
     if (DEBUG_DONT_CLEANUP) {
-      console.log('Simulating cleanup', tempDir);
+      this.logger.log('Simulating cleanup', tempDir);
       return;
     }
 
     try {
       await fs.promises.rmdir(tempDir, { recursive: true });
-      console.log(`Deleted temp dir: ${tempDir}`);
+      this.logger.log(`Deleted temp dir: ${tempDir}`);
     } catch (error) {
-      console.error(`Failed to delete temp dir: ${error.message}`);
+      this.logger.error(`Failed to delete temp dir: ${error.message}`);
     }
   }
 
@@ -456,7 +457,7 @@ export class JdfService {
     try {
       return dateString ? new Date(formatted) : null;
     } catch {
-      console.error(`Failed to parse date: ${dateString}`);
+      this.logger.error(`Failed to parse date: ${dateString}`);
       return null;
     }
   }
@@ -485,7 +486,7 @@ export class JdfService {
     //save original file
     try {
       await fs.promises.writeFile(origPath, file.buffer);
-      console.log(`Saved ${file.originalname} to ${origPath}`);
+      this.logger.log(`Saved ${file.originalname} to ${origPath}`);
     } catch (error) {
       throw new Error(`Failed to save zip file: ${error.message}`);
     }
