@@ -1,0 +1,122 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["relationJoins"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Line {
+  id   Int     @id @default(autoincrement())
+  number String?
+  name String?
+  icoCarrier String?
+  lineType String?
+  vehicleType String?
+  isDetour Boolean?
+  isGrouped Boolean?
+  isCoded Boolean?
+  reserve String?
+  license String?
+  licenseValidFrom DateTime?
+  licenseValidTo DateTime?
+  scheduleValidFrom DateTime?
+  scheduleValidTo DateTime?
+  // custom fields
+  carrierId Int?
+  carrier Carrier? @relation(fields: [carrierId], references: [id])
+
+  StopConnection StopConnection[]
+}
+
+model Stop {
+  id   Int     @id @default(autoincrement())
+  number Int?
+  name String?
+  district String?
+  nearPoint String?
+  nearCity String?
+  country String?
+
+  // custom fields
+  nameNormalized String?
+  duplicateRootId Int?
+  lat Float?
+  lon Float?
+
+  StopConnection StopConnection[]
+}
+
+model StopConnection {
+  id   Int     @id @default(autoincrement())
+  lineNumber Int?
+  connectionNumber Int?
+  tariffNumber Int?
+  stopNumber Int?
+  markerCode String?
+  stationNumber String?
+  code1 String?
+  code2 String?
+  kilometers Int?
+  arrival String?
+  departure String?
+
+  // custom fields
+  lineId Int?
+  line Line? @relation(fields: [lineId], references: [id])
+
+  stopId Int?
+  stop Stop? @relation(fields: [stopId], references: [id])
+
+  arrivalTime DateTime?
+  departureTime DateTime?
+}
+
+model Connection {
+  id   Int     @id @default(autoincrement())
+  lineNumber Int?
+  connectionNumber Int?
+  code1 String?
+  code2 String?
+  code3 String?
+  code4 String?
+  code5 String?
+  code6 String?
+  code7 String?
+  code8 String?
+  code9 String?
+  code10 String?
+
+  connectionGroupId Int?
+
+  // custom fields
+  lineId Int?
+}
+
+model Code {
+  id   Int     @id @default(autoincrement())
+  internalCode String?
+  code String?
+  internal String?
+}
+
+model Carrier {
+  id   Int     @id @default(autoincrement())
+  ico String?
+  dic String?
+  name String?
+  firmType String?
+  personName String?
+  address String?
+  phone String?
+  dispatchPhone String?
+  infoPhone String?
+  fax String?
+  email String?
+  website String?
+
+  // custom fields
+  Line Line[]
+}
